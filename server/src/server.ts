@@ -70,15 +70,15 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check API (No authentication required)
-app.get('/api/health', (_req: Request, res: Response) => {
+// Health Check API (No authentication required) — available at both /api/health and /health
+app.get(['/api/health', '/health'], (_req: Request, res: Response) => {
   res.json({
     status: 'online',
     platform: 'KRISHI DIGITAL — Digital Agriculture Mission',
   });
 });
 
-// API Routes
+// Primary API Routes (Standard /api prefix)
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/farms', farmRoutes);
@@ -96,6 +96,25 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/irrigation', irrigationRoutes);
 app.use('/api/disease', diseaseRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Fallback Aliases (in case a client omits /api prefix)
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/farms', farmRoutes);
+app.use('/crops', cropRoutes);
+app.use('/soil', soilRoutes);
+app.use('/weather', weatherRoutes);
+app.use('/market', marketRoutes);
+app.use('/products', productRoutes);
+app.use('/orders', orderRoutes);
+app.use('/schemes', schemeRoutes);
+app.use('/experts', expertRoutes);
+app.use('/consultations', consultationRoutes);
+app.use('/articles', articleRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/irrigation', irrigationRoutes);
+app.use('/disease', diseaseRoutes);
+app.use('/admin', adminRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

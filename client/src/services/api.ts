@@ -1,9 +1,33 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+/**
+ * Resolves the API base URL.
+ * Automatically guarantees the URL ends with '/api' without double '/api/api' or trailing slashes.
+ * Works seamlessly whether VITE_API_URL is configured as:
+ * - https://YOUR-RENDER-BACKEND.onrender.com/api
+ * - https://YOUR-RENDER-BACKEND.onrender.com
+ * - /api (default for local Vite proxy)
+ */
+const resolveBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl || !envUrl.trim()) {
+    return '/api';
+  }
+
+  // Strip trailing slashes
+  const trimmed = envUrl.trim().replace(/\/+$/, '');
+
+  // If already ending with /api, return it
+  if (trimmed.endsWith('/api')) {
+    return trimmed;
+  }
+
+  // If user passed root domain (e.g. https://YOUR-RENDER-BACKEND.onrender.com), append /api
+  return `${trimmed}/api`;
+};
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: resolveBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
