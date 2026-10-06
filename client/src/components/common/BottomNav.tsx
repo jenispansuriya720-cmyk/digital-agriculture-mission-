@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Tractor, TrendingUp, ShoppingBag, User } from 'lucide-react';
+import { LayoutDashboard, Tractor, TrendingUp, ShoppingBag, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 
@@ -8,12 +8,17 @@ export const BottomNav: React.FC = () => {
   const { user } = useAuth();
   const { totalItemCount } = useCart();
 
+  // On public pages when not logged in, do not display authenticated bottom nav
+  if (!user) {
+    return null;
+  }
+
   const items = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Farm', path: user ? '/my-farm' : '/login', icon: Tractor },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Farm', path: '/my-farm', icon: Tractor },
     { name: 'Market', path: '/market', icon: TrendingUp },
     { name: 'Shop', path: '/marketplace', icon: ShoppingBag, badge: totalItemCount },
-    { name: 'Profile', path: user ? '/profile' : '/login', icon: User },
+    { name: 'Profile', path: '/profile', icon: User },
   ];
 
   return (
@@ -47,3 +52,5 @@ export const BottomNav: React.FC = () => {
     </div>
   );
 };
+
+export default BottomNav;

@@ -13,7 +13,6 @@ import {
   LayoutDashboard,
   Shield,
   CheckCircle,
-  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -76,6 +75,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   const handleMarkAsRead = async (id: string, link?: string) => {
     try {
       await notificationService.markAsRead(id);
@@ -96,8 +100,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
     } catch (err) {}
   };
 
-  const navLinks = [
-    { name: t.nav.home, path: '/' },
+  const handleLogout = () => {
+    setUserDropdownOpen(false);
+    setMobileMenuOpen(false);
+    logout();
+    navigate('/');
+  };
+
+  // Authenticated full navigation links
+  const authNavLinks = [
+    { name: t.nav.home || 'Home', path: '/dashboard' },
     { name: t.nav.myFarm, path: '/my-farm' },
     { name: t.nav.crops, path: '/crops' },
     { name: t.nav.market, path: '/market' },
@@ -113,7 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
         <div className="flex items-center justify-between h-18">
           {/* Logo & Brand */}
           <div className="flex items-center space-x-3">
-            <Link to="/" className="flex items-center space-x-2.5 group">
+            <Link to={user ? '/dashboard' : '/'} className="flex items-center space-x-2.5 group">
               <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-white shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
                 <Sprout className="w-6 h-6 text-secondary animate-pulse" />
               </div>
@@ -133,52 +145,57 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             </Link>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center space-x-1">
-            {navLinks.map((link) => {
-              const isActive = location.pathname === link.path;
-              return (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-primary bg-light-green/60 font-semibold'
-                      : 'text-gray-600 hover:text-primary hover:bg-gray-50'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </nav>
+          {/* Desktop Navigation Links — ONLY shown for authenticated users */}
+          {user && (
+            <nav className="hidden lg:flex items-center space-x-1">
+              {authNavLinks.map((link) => {
+                const isActive = location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'text-primary bg-light-green/60 font-semibold'
+                        : 'text-gray-600 hover:text-primary hover:bg-gray-50'
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
 
           {/* Right Header Icons & Actions */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Search Trigger */}
+            {/* Search Trigger (Always visible for both public and logged-in) */}
             <button
               onClick={onOpenSearch}
-              className="p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-full transition-colors hidden sm:flex items-center"
+              className="p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-full transition-colors flex items-center"
               title="Search platform (Ctrl + K)"
+              aria-label="Search"
             >
               <Search className="w-5 h-5" />
             </button>
 
-            {/* Shopping Cart */}
-            <Link
-              to="/cart"
-              className="relative p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-full transition-colors"
-              title="Shopping Cart"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {totalItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-secondary text-white font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
-                  {totalItemCount}
-                </span>
-              )}
-            </Link>
+            {/* Shopping Cart — Authenticated users only */}
+            {user && (
+              <Link
+                to="/cart"
+                className="relative p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-full transition-colors"
+                title="Shopping Cart"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {totalItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-secondary text-white font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
+                    {totalItemCount}
+                  </span>
+                )}
+              </Link>
+            )}
 
-            {/* Notifications Dropdown */}
+            {/* Notifications Dropdown — Authenticated users only */}
             {user && (
               <div className="relative" ref={notifRef}>
                 <button
@@ -265,7 +282,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
               </div>
             )}
 
-            {/* Language Selector */}
+            {/* Language Selector (Always visible for both public and logged-in) */}
             <div className="relative" ref={langRef}>
               <button
                 onClick={() => setLanguageOpen(!languageOpen)}
@@ -319,7 +336,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
               )}
             </div>
 
-            {/* User Profile or Login/Register */}
+            {/* Profile Dropdown (Logged in) OR Login & Register (Logged out) */}
             {user ? (
               <div className="relative" ref={userRef}>
                 <button
@@ -383,11 +400,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
                     <div className="border-t border-gray-100 my-1" />
 
                     <button
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        logout();
-                        navigate('/');
-                      }}
+                      onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center space-x-2 font-medium"
                     >
                       <LogOut className="w-4 h-4 text-red-500" />
@@ -413,10 +426,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
               </div>
             )}
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Toggle Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-gray-600 hover:text-primary rounded-lg"
+              className="lg:hidden p-2 text-gray-600 hover:text-primary rounded-lg transition-colors"
+              aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -424,28 +438,93 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Responsive Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-6 space-y-2">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50"
-            >
-              {link.name}
-            </Link>
-          ))}
-          {user && (
-            <div className="pt-2 border-t border-gray-100">
-              <Link
-                to="/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg text-sm font-semibold text-primary hover:bg-light-green/40"
-              >
-                🌾 {t.nav.dashboard}
-              </Link>
+        <div className="lg:hidden bg-white border-b border-gray-200 px-4 pt-3 pb-6 space-y-3 animate-in fade-in slide-in-from-top-2">
+          {user ? (
+            /* Logged-In Mobile Menu: Complete Dashboard Navigation */
+            <div className="space-y-1">
+              <div className="px-3 py-2 mb-2 bg-cream rounded-xl border border-gray-100 flex items-center space-x-3">
+                <img
+                  src={user.avatar || 'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?auto=format&fit=crop&q=80&w=150'}
+                  alt={user.name}
+                  className="w-9 h-9 rounded-full object-cover border border-primary"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-gray-900 truncate">{user.name}</p>
+                  <p className="text-[10px] text-gray-500 capitalize">{user.role} • {user.district}</p>
+                </div>
+              </div>
+
+              {authNavLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    location.pathname === link.path
+                      ? 'text-primary bg-light-green/60 font-semibold'
+                      : 'text-gray-700 hover:text-primary hover:bg-gray-50'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+
+              <div className="pt-2 border-t border-gray-100 space-y-1">
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50"
+                >
+                  👤 {t.nav.profile}
+                </Link>
+                <Link
+                  to="/cart"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-50"
+                >
+                  🛒 Cart ({totalItemCount})
+                </Link>
+                {user.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100"
+                  >
+                    🛡️ Admin Management
+                  </Link>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
+                >
+                  🚪 {t.nav.logout}
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Logged-Out Mobile Menu: Public Options Only */
+            <div className="space-y-3 pt-1">
+              <p className="text-xs text-gray-500 px-1">
+                Welcome to Krishi Digital — Sign in to manage your crops, land telemetry, and Mandi intelligence.
+              </p>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-2.5 px-3 rounded-xl border border-primary text-primary font-bold text-xs text-center hover:bg-light-green/40 transition-colors"
+                >
+                  {t.nav.login}
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-primary text-white font-bold text-xs text-center hover:bg-primary-dark shadow-sm transition-colors"
+                >
+                  {t.nav.register}
+                </Link>
+              </div>
             </div>
           )}
         </div>
@@ -453,3 +532,5 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
     </header>
   );
 };
+
+export default Navbar;

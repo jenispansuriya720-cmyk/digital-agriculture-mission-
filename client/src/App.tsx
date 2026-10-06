@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { LanguageProvider } from './context/LanguageContext';
 
@@ -10,6 +10,7 @@ import { Sidebar } from './components/common/Sidebar';
 import { Footer } from './components/common/Footer';
 import { BottomNav } from './components/common/BottomNav';
 import { GlobalSearch } from './components/common/GlobalSearch';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Pages
 import { HomePage } from './pages/HomePage';
@@ -38,6 +39,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 // Inner layout component to handle sidebar vs full width
 const AppLayout: React.FC = () => {
   const location = useLocation();
+  const { user } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Pages that display sidebar layout for SaaS experience
@@ -64,7 +66,7 @@ const AppLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F7F0] text-[#172018]">
-      {/* Top Navigation */}
+      {/* Top Navigation: adapts automatically based on authentication status */}
       {!isAuthRoute && <Navbar onOpenSearch={() => setIsSearchOpen(true)} />}
 
       {/* Global Search Dialog */}
@@ -72,40 +74,164 @@ const AppLayout: React.FC = () => {
 
       {/* Main Body */}
       <div className="flex-1 flex">
-        {isDashboardRoute && !isAuthRoute && <Sidebar />}
+        {isDashboardRoute && !isAuthRoute && user && <Sidebar />}
 
         <main className="flex-1 w-full min-w-0 pb-16 md:pb-6">
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/my-farm" element={<MyFarmPage />} />
-            <Route path="/crops" element={<CropsPage />} />
-            <Route path="/weather" element={<WeatherPage />} />
-            <Route path="/soil-health" element={<SoilHealthPage />} />
-            <Route path="/disease-detection" element={<DiseaseDetectionPage />} />
-            <Route path="/irrigation" element={<IrrigationPage />} />
-            <Route path="/market" element={<MarketPage />} />
-            <Route path="/marketplace" element={<MarketplacePage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/orders" element={<OrdersPage />} />
-            <Route path="/schemes" element={<SchemesPage />} />
-            <Route path="/experts" element={<ExpertsPage />} />
-            <Route path="/knowledge" element={<KnowledgePage />} />
-            <Route path="/knowledge/:slug" element={<ArticleDetailPage />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/admin" element={<AdminPage />} />
+
+            {/* Protected Dashboard Routes — Require Login */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-farm"
+              element={
+                <ProtectedRoute>
+                  <MyFarmPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/crops"
+              element={
+                <ProtectedRoute>
+                  <CropsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/weather"
+              element={
+                <ProtectedRoute>
+                  <WeatherPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/soil-health"
+              element={
+                <ProtectedRoute>
+                  <SoilHealthPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/disease-detection"
+              element={
+                <ProtectedRoute>
+                  <DiseaseDetectionPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/irrigation"
+              element={
+                <ProtectedRoute>
+                  <IrrigationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/market"
+              element={
+                <ProtectedRoute>
+                  <MarketPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/marketplace"
+              element={
+                <ProtectedRoute>
+                  <MarketplacePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cart"
+              element={
+                <ProtectedRoute>
+                  <CartPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <OrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/schemes"
+              element={
+                <ProtectedRoute>
+                  <SchemesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/experts"
+              element={
+                <ProtectedRoute>
+                  <ExpertsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/knowledge"
+              element={
+                <ProtectedRoute>
+                  <KnowledgePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/knowledge/:slug"
+              element={
+                <ProtectedRoute>
+                  <ArticleDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fallback */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
       </div>
 
-      {/* Footer (on landing and content pages) */}
+      {/* Footer on public landing and content pages */}
       {!isDashboardRoute && !isAuthRoute && <Footer />}
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Mobile Bottom Navigation Bar (Shown only for authenticated users) */}
       {!isAuthRoute && <BottomNav />}
     </div>
   );
