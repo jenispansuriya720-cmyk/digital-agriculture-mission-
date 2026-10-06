@@ -31,7 +31,7 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to Database and auto-seed if empty
+// Connect to Database and auto-seed demo data if empty
 connectDB().then(async () => {
   try {
     const userCount = await User.countDocuments();
@@ -40,25 +40,41 @@ connectDB().then(async () => {
       await runSeed(false);
     }
   } catch (err) {
-    console.error('Auto-seed check warning:', err);
+    console.warn('Auto-seed check notice:', err);
   }
+}).catch((err) => {
+  console.error('Failed to initialize database connection:', err);
 });
 
-// Middleware
+// Configure CORS
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow non-browser requests or matching origins
+    if (!origin) return callback(null, true);
+    const trustedOrigins = [
+      allowedOrigin.replace(/\/$/, ''),
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://localhost:3000',
+    ];
+    if (trustedOrigins.includes(origin.replace(/\/$/, '')) || allowedOrigin === '*') {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true,
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check API
-app.get('/api/health', (req: Request, res: Response) => {
+// Health Check API (No authentication required)
+app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'online',
     platform: 'KRISHI DIGITAL — Digital Agriculture Mission',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0',
   });
 });
 

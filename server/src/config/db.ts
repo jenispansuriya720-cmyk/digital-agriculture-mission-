@@ -4,33 +4,46 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 let mongoMemoryServer: MongoMemoryServer | null = null;
 
 export const connectDB = async (): Promise<void> => {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/krishi_digital';
-
   try {
-    // Set connection timeout low so if local daemon isn't available we fallback quickly
-    mongoose.set('strictQuery', false);
-    
-    // Attempt standard connection first
-    await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 2500,
-    });
-    console.log(`✅ MongoDB Connected successfully to: ${mongoose.connection.host}/${mongoose.connection.name}`);
-  } catch (primaryErr) {
-    console.warn(`⚠️ Could not connect to primary MongoDB URI (${uri}). Initializing embedded MongoDB engine...`);
-    try {
+    const mongoUri = process.env.MONGODB_URI;
+
+    if (!mongoUri) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('MONGODB_URI is not configured in environment variables');
+      }
+      console.warn('⚠️ MONGODB_URI not provided. Starting embedded MongoDB engine for local development...');
       mongoMemoryServer = await MongoMemoryServer.create({
-        instance: {
-          dbName: 'krishi_digital',
-        },
+        instance: { dbName: 'krishi_digital' },
       });
       const memUri = mongoMemoryServer.getUri();
       await mongoose.connect(memUri);
       console.log(`✅ Connected to Embedded In-Memory MongoDB Engine at: ${memUri}`);
-      console.log(`💡 Note: For persistent storage across restarts, set a live MONGODB_URI in server/.env (e.g. MongoDB Atlas).`);
-    } catch (fallbackErr) {
-      console.error('❌ Failed to connect to MongoDB and in-memory fallback failed:', fallbackErr);
-      process.exit(1);
+      return;
     }
+
+    // Connect to configured MongoDB URI (e.g. MongoDB Atlas)
+    await mongoose.connect(mongoUri);
+    console.log(`✅ MongoDB connected successfully to: ${mongoose.connection.host}/${mongoose.connection.name}`);
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error);
+
+    // If local dev and primary connection failed, attempt in-memory fallback
+    if (process.env.NODE_ENV !== 'production' && !mongoMemoryServer) {
+      try {
+        console.warn('⚠️ Attempting fallback to embedded in-memory MongoDB engine...');
+        mongoMemoryServer = await MongoMemoryServer.create({
+          instance: { dbName: 'krishi_digital' },
+        });
+        const memUri = mongoMemoryServer.getUri();
+        await mongoose.connect(memUri);
+        console.log(`✅ Connected to Embedded In-Memory MongoDB Engine at: ${memUri}`);
+        return;
+      } catch (fallbackErr) {
+        console.error('❌ In-memory MongoDB fallback also failed:', fallbackErr);
+      }
+    }
+
+    process.exit(1);
   }
 };
 

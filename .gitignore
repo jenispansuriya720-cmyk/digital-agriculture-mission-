@@ -2,7 +2,7 @@
 node_modules/
 */node_modules/
 
-# Production build outputs
+# Production builds
 dist/
 build/
 */dist/
@@ -10,14 +10,10 @@ build/
 
 # Environment variables & secrets
 .env
-.env.local
-.env.*.local
-*.env
-server/.env
-
-# Keep template env files
+.env.*
 !.env.example
 !server/.env.example
+!client/.env.example
 
 # Logs
 logs/
