@@ -1,0 +1,35 @@
+{
+  "name": "krishi-digital",
+  "version": "1.0.0",
+  "description": "KRISHI DIGITAL — Digital Agriculture Mission: Unified full-stack platform for Indian farmers with MERN stack, IoT telemetry, Mandi price tracker, AI Crop Doctor, and Admin Dashboard.",
+  "scripts": {
+    "install:server": "npm --prefix server install",
+    "install:client": "npm --prefix client install",
+    "install:all": "npm run install:server && npm run install:client",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "seed": "npm --prefix server run seed",
+    "build:server": "npm --prefix server run build",
+    "build:client": "npm --prefix client run build",
+    "build": "npm run build:server && npm run build:client",
+    "test:api": "node test-api.cjs"
+  },
+  "keywords": [
+    "agriculture",
+    "agritech",
+    "digital-agriculture-mission",
+    "krishi-digital",
+    "agristack",
+    "mandi-prices",
+    "mern",
+    "iot-irrigation",
+    "crop-doctor",
+    "react",
+    "nodejs",
+    "express",
+    "mongodb",
+    "typescript"
+  ],
+  "author": "Krishi Digital Mission Team",
+  "license": "MIT"
+}
